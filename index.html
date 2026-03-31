@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolarSave \u2014 How Much Can You Save?</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sun: #F5A623;
+    --sun-bright: #FFD166;
+    --deep: #0A1628;
+    --mid: #112240;
+    --card: #162945;
+    --border: rgba(245,166,35,0.18);
+    --text: #E8F0FE;
+    --muted: #8899AA;
+    --green: #06D6A0;
+    --white: #ffffff;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--deep);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Background sun glow */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -150px;
+    left: -150px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(6,214,160,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+    animation: fadeDown 0.7s ease both;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--sun);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .logo-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--sun);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.7); }
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    color: var(--sun);
+    position: relative;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: var(--muted);
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 36px;
+    animation: fadeIn 0.5s ease both 0.3s;
+  }
+
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--sun), var(--sun-bright));
+    border-radius: 99px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+    width: 20%;
+  }
+
+  /* Steps */
+  .step {
+    display: none;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .step.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .step-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--sun);
+    margin-bottom: 10px;
+  }
+
+  .step-question {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .step-hint {
+    font-size: 0.9rem;
+    color: var(--muted);
+    margin-bottom: 28px;
+    line-height: 1.5;
+  }
+
+  /* Option cards */
+  .options {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+
+  .options.cols-2 { grid-template-columns: 1fr 1fr; }
+  .options.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .option-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .option-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(245,166,35,0.08), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .option-card:hover {
+    border-color: rgba(245,166,35,0.5);
+    transform: translateY(-2px);
+  }
+
+  .option-card:hover::before { opacity: 1; }
+
+  .option-card.selected {
+    border-color: var(--sun);
+    background: rgba(245,166,35,0.1);
+  }
+
+  .option-card.selected::before { opacity: 1; }
+
+  .option-icon {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .option-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .option-sub {
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+
+  .check-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 20px;
+    height: 20px;
+    background: var(--sun);
+    border-radius: 50%;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--deep);
+    font-weight: 800;
+  }
+
+  .option-card.selected .check-badge { display: flex; }
+
+  /* Input field */
+  .input-group {
+    margin-bottom: 28px;
+  }
+
+  .input-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .input-wrap {
+    position: relative;
+  }
+
+  .input-prefix {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    color: var(--sun);
+    font-weight: 700;
+    pointer-events: none;
+  }
+
+  input[type="text"], input[type="number"], input[type="email"], input[type="tel"], select {
+    width: 100%;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 16px 16px 44px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    color: var(--white);
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+
+  input[type="text"]:not(.has-prefix),
+  input[type="email"],
+  input[type="tel"],
+  select {
+    padding-left: 16px;
+  }
+
+  input:focus, select:focus {
+    border-color: var(--sun);
+  }
+
+  input::placeholder { color: var(--muted); }
+
+  select option { background: var(--card); color: var(--white); }
+
+  /* Range slider */
+  .slider-wrap { margin-bottom: 28px; }
+
+  .slider-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--sun);
+    margin-bottom: 12px;
+  }
+
+  .slider-value span {
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 400;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    height: 4px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 99px;
+    outline: none;
+    padding: 0;
+    cursor: pointer;
+    accent-color: var(--sun);
+  }
+
+  .slider-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  /* Buttons */
+  .btn-next {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--sun), var(--sun-bright));
+    border: none;
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--deep);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.03em;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-next::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-next:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,166,35,0.35); }
+  .btn-next:hover::after { opacity: 1; }
+  .btn-next:active { transform: translateY(0); }
+
+  .btn-next:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Trust badges */
+  .trust {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .trust-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  .trust-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+  }
+
+  /* Result screen */
+  .result-screen {
+    text-align: center;
+  }
+
+  .result-card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 36px 28px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .result-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--sun), var(--sun-bright), var(--green));
+  }
+
+  .result-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    display: block;
+    animation: bounceIn 0.6s ease both;
+  }
+
+  @keyframes bounceIn {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .result-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .result-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.8rem, 8vw, 4.5rem);
+    font-weight: 800;
+    color: var(--sun);
+    line-height: 1;
+    margin-bottom: 6px;
+    animation: countUp 1s ease both 0.3s;
+  }
+
+  @keyframes countUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-per { font-size: 0.9rem; color: var(--muted); margin-bottom: 24px; }
+
+  .result-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .stat-box {
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    padding: 14px 10px;
+  }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 2px;
+  }
+
+  .stat-num.green { color: var(--green); }
+
+  .stat-label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    line-height: 1.3;
+  }
+
+  /* Lead capture form */
+  .lead-card {
+    background: var(--card);
+    border: 1.5px solid rgba(6,214,160,0.25);
+    border-radius: 20px;
+    padding: 28px;
+    text-align: left;
+  }
+
+  .lead-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+  }
+
+  .lead-sub {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-full { margin-bottom: 12px; }
+
+  .btn-submit {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, var(--green), #04B589);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--deep);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 8px;
+  }
+
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(6,214,160,0.3); }
+
+  /* Success screen */
+  .success-screen {
+    text-align: center;
+    padding: 40px 20px;
+  }
+
+  .success-icon {
+    width: 80px;
+    height: 80px;
+    background: rgba(6,214,160,0.15);
+    border: 2px solid var(--green);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    margin: 0 auto 24px;
+    animation: bounceIn 0.6s ease both;
+  }
+
+  .success-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: var(--white);
+    margin-bottom: 12px;
+  }
+
+  .success-sub {
+    font-size: 1rem;
+    color: var(--muted);
+    line-height: 1.6;
+    max-width: 380px;
+    margin: 0 auto;
+  }
+
+  /* Country flags */
+  .country-flag { font-size: 1.4rem; }
+
+  @media (max-width: 480px) {
+    .options.cols-3 { grid-template-columns: 1fr 1fr; }
+    .result-stats { grid-template-columns: 1fr 1fr; }
+    .form-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      SolarSave Europe
+    </div>
+    <h1>How much can you save with <span>solar panels?</span></h1>
+    <p class="subtitle">Answer 4 quick questions. Get your personalized savings estimate in 60 seconds.</p>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap">
+    <div class="progress-labels">
+      <span id="progressText">Step 1 of 4</span>
+      <span id="progressPct">25%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- STEP 1: Country -->
+  <div class="step active" id="step1">
+    <div class="step-label">Step 1 of 4</div>
+    <div class="step-question">Which country are you in?</div>
+    <div class="step-hint">Solar savings vary by country due to sunlight hours and government subsidies.</div>
+    <div class="options cols-2">
+      <div class="option-card" onclick="selectOption(this, 'country', 'germany', 1)">
+        <div class="check-badge">\u2713</div>
+        <span class="option-icon">\ud83c\udde9\ud83c\uddea</span>
+        <div class="option-title">Germany</div>
+        <div class="option-sub">Up to 30% subsidy</div>
+      </div>
+      <div class="option-card" onclick="selectOption(this, 'country', 'netherlands', 1)">
+        <div class="check-badge">\u2713</div>
+        <span class="option-icon">\ud83c\uddf3\ud83c\uddf1</span>
+        <div class="option-title">Netherlands</div>
+        <div class="option-sub">Saldering scheme</div>
+      </div>
+      <div class="option-card" onclick="selectOption(this, 'country', 'belgium', 1)">
+        <div class="check-badge">\u2713</div>
+        <span class="option-icon">\ud83c\udde7\ud83c\uddea</span>
+        <div class="option-title">Belgium</div>
+        <div class="option-sub">Green certificates</div>
+      </div>
+      <div class="option-card" onclick="selectOption(this, 'country', 'uk', 1)">
+        <div class="check-badge">\u2713</div>
+        <span class="option-icon">\ud83c\uddec\ud83c\udde7</span>
+        <div class="option-title">United Kingdom</div>
+        <div class="option-sub">0% VAT on solar</div>
+      </div>
+      <div class="option-card" onclick="selectOption(this, 'country', 'france', 1)">
+        <div class="check-badge">\u2713</div>
+        <span class="option-icon">\ud83c\uddeb\ud83c\uddf7</span>
+        <div class="option-title">France</div>
+        <div class="option-sub">Feed-in tariff</div>
+      </div>
+      <div class="option-card" onclick="selectOption(this, 'country', 'other', 1)">
+        <div class="check-badge">\u2713</div>
+        <span class="option-icon">\ud83c\udf0d</span>
+        <div class="option-title">Other Europe</div>
+        <div class="option-sub">EU incentives apply</div>
+      </div>
+    </div>
+    <button class="btn-next" id="btn1"
